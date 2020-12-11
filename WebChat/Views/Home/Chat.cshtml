@@ -9,7 +9,6 @@
 </div>
 <div id="chatroom" class="mt-4"></div>
 
-<script src="https://peterolson.github.io/BigInteger.js/BigInteger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js" integrity="sha256-/H4YS+7aYb9kJ5OKhFYPUjSJdrtV6AeyJOtTkw6X72o=" crossorigin="anonymous"></script>
 <script>
     window.onload = function () {
@@ -18,11 +17,7 @@
 
         for (var i = 0; i < messagesFromDb.length; i++) {
 
-            console.log(document);
-            var elem = document.createElement("p");
-            elem.appendChild(document.createTextNode(messagesFromDb[i]));
-            var lastElem = document.getElementById("chatroom").firstChild;
-            document.getElementById("chatroom").appendChild(elem);
+            createMessageElement(messagesFromDb[i]);
         }
     };
 
@@ -37,13 +32,9 @@
 
     console.log(hubConnection);
     hubConnection.on("Send", function (data) {
-
-        var elem = document.createElement("p");
         var message = alice.Decrypt(data);
-        elem.appendChild(document.createTextNode(message));
-        var lastElem = document.getElementById("chatroom").lastChild;
-        document.getElementById("chatroom").appendChild(elem);
-        //document.getElementById("chatroom").insertBefore(elem, lastElem.nextSibling);
+
+        createMessageElement(message);
 
         createMessage(message);
 
@@ -69,11 +60,7 @@
 
         hubConnection.invoke("Send", alice.Encrypt(message));
 
-        var elem = document.createElement("p");
-        elem.appendChild(document.createTextNode(message));
-        var lastElem = document.getElementById("chatroom").lastChild;
-        document.getElementById("chatroom").appendChild(elem);
-        //document.getElementById("chatroom").insertBefore(elem, lastElem.nextSibling);
+        createMessageElement(message);
         document.getElementById("message").value = '';
 
     });
@@ -94,12 +81,6 @@
             this.privateKey = privateKey;
         }
 
-        //constructor(publicKey1, publicKey2, privateKey) {
-        //    this.publicKey1 = publicKey1;
-        //    this.publicKey2 = publicKey2;
-        //    this.privateKey = privateKey;
-        //}
-
         GetPublicKey() {
             return this.publicKey1;
         }
@@ -113,59 +94,28 @@
         }
 
         Encrypt(message) {
-            var sb = ""
+            var stringBuilder = ""
 
             for (var i = 0; i < message.length; i++) {
-                console.log(message[i].charCodeAt(0));
-                sb += String.fromCharCode((message[i].charCodeAt(0) + this.fullKey));
+                stringBuilder += String.fromCharCode((message[i].charCodeAt(0) + this.fullKey));
             }
 
-            console.log("Encrypted:" + sb);
-            //for (var item in message) {
-            //    sb += ((item.charCodeAt(0) + this.fullKey));
-            //}
-
-            return sb;
+            return stringBuilder;
         }
         Decrypt(encryptedMessage) {
-            var sb = "";
+            var stringBuilder = "";
 
             for (var i = 0; i < encryptedMessage.length; i++) {
-                sb += String.fromCharCode(((encryptedMessage[i].charCodeAt(0) - this.fullKey)));
+                stringBuilder += String.fromCharCode(((encryptedMessage[i].charCodeAt(0) - this.fullKey)));
             }
 
-            return sb;
+            return stringBuilder;
         }
         CreateFullKey(partialKey) {
-            console.log("PartialKey():" + partialKey);
-            console.log("PrivateKey():" + this.privateKey);
-            console.log("PublicKey2():" + this.publicKey2);
-            this.fullKey = Math.pow(partialKey, this.privateKey);
-            this.fullKey %= this.publicKey2;
-            console.log('FullKey: ' + this.fullKey);
-
-            //var key = bigInt(partialKey).modPow(this.privateKey, this.publicKey2)
-            //console.log(key.valueOf());
-            //this.fullKey = key.valueOf();
+            this.fullKey = Math.pow(partialKey, this.privateKey) % this.publicKey2;
         }
         CreatePartialKey() {
-
-            //alert(this.Modulo(this.publicKey1).pow(this.privateKey).valueOf(), this.publicKey2))
-            //var key = bigInt(234).pow(934) % 568;
-
-            //console.log(key);
-            //var key = bigInt(234).modPow(934, 568);
-            //console.log(key.valueOf());
-            //return key.value;
-
-            console.log('PublicKey1: ' + this.publicKey1);
-            console.log('PublicKey2: ' + this.publicKey2);
-
-            var a = Math.pow(this.publicKey1, this.privateKey);
-            a %= this.publicKey2;
-            console.log('PartialKey: ' + a);
-            //this.CreateFullKey(a);
-            return a;
+            return Math.pow(this.publicKey1, this.privateKey) % this.publicKey2;
         }
 
         Modulo(divident, divisor) {
@@ -178,6 +128,12 @@
 
             return divident % divisor;
         }
+    }
+
+    function createMessageElement(message) {
+        var elem = document.createElement("p");
+        elem.appendChild(document.createTextNode(message));
+        document.getElementById("chatroom").appendChild(elem);
     }
 
     function createMessage(data) {
